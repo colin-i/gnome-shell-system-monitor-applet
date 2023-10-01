@@ -209,12 +209,14 @@ const smStyleManager = class SystemMonitor_smStyleManager {
         this._extension = '';
         this._iconsize = 1;
         this._diskunits = _('MiB/s');
+        this._netunits_bytes = _('B/s');
         this._netunits_kbytes = _('KiB/s');
         this._netunits_mbytes = _('MiB/s');
-        this._netunits_gbytes = _('GiB/s');
+        //this._netunits_gbytes = _('GiB/s');
+        this._netunits_bits = _('bit/s');
         this._netunits_kbits = _('kbit/s');
         this._netunits_mbits = _('Mbit/s');
-        this._netunits_gbits = _('Gbit/s');
+        //this._netunits_gbits = _('Gbit/s');
         this._pie_size = 300;
         this._pie_fontsize = 14;
         this._bar_width = 300;
@@ -226,12 +228,14 @@ const smStyleManager = class SystemMonitor_smStyleManager {
             this._extension = '-compact';
             this._iconsize = 3 / 5;
             this._diskunits = _('MB');
+            this._netunits_bytes = _('B');
             this._netunits_kbytes = _('kB');
             this._netunits_mbytes = _('MB');
-            this._netunits_gbytes = _('GB');
+            //this._netunits_gbytes = _('GB');
+            this._netunits_bits = 'b';
             this._netunits_kbits = 'kb';
             this._netunits_mbits = 'Mb';
-            this._netunits_gbits = 'Gb';
+            //this._netunits_gbits = 'Gb';
             this._pie_size *= 4 / 5;
             this._pie_fontsize = 12;
             this._bar_width *= 3 / 5;
@@ -248,14 +252,20 @@ const smStyleManager = class SystemMonitor_smStyleManager {
     diskunits() {
         return this._diskunits;
     }
+    netunits_bytes() {
+        return this._netunits_bytes;
+    }
     netunits_kbytes() {
         return this._netunits_kbytes;
     }
     netunits_mbytes() {
         return this._netunits_mbytes;
     }
-    netunits_gbytes() {
+    /*netunits_gbytes() {
         return this._netunits_gbytes;
+    }*/
+    netunits_bits() {
+        return this._netunits_bits;
     }
     netunits_kbits() {
         return this._netunits_kbits;
@@ -263,9 +273,9 @@ const smStyleManager = class SystemMonitor_smStyleManager {
     netunits_mbits() {
         return this._netunits_mbits;
     }
-    netunits_gbits() {
+    /*netunits_gbits() {
         return this._netunits_gbits;
-    }
+    }*/
     pie_size() {
         return this._pie_size;
     }
@@ -1808,7 +1818,7 @@ const Net = class SystemMonitor_Net extends ElementBase {
         this.last = [0, 0, 0, 0, 0];
         this.usage = [0, 0, 0, 0, 0];
         this.last_time = 0;
-        this.tip_format([_('KiB/s'), '/s', _('KiB/s'), '/s', '/s']);
+        this.tip_format([_('B/s'), '/s', _('B/s'), '/s', '/s']);
         this.update_units();
         Schema.connect('changed::' + this.elt + '-speed-in-bits', this.update_units.bind(this));
         try {
@@ -1850,7 +1860,7 @@ const Net = class SystemMonitor_Net extends ElementBase {
             accum[4] += this.gtop.collisions;
         }
 
-        let time = GLib.get_monotonic_time() * 0.001024;
+        let time = GLib.get_monotonic_time() * 0.0001024;
         let delta = time - this.last_time;
         if (delta > 0) {
             for (let i = 0; i < 5; i++) {
@@ -1859,6 +1869,7 @@ const Net = class SystemMonitor_Net extends ElementBase {
                 this.vals[i] = this.usage[i];
             }
         }
+
         this.last_time = time;
     }
 
@@ -1874,55 +1885,57 @@ const Net = class SystemMonitor_Net extends ElementBase {
     _apply() {
         this.tip_vals = this.usage;
         if (this.speed_in_bits) {
-            this.tip_vals[0] = Math.round(this.tip_vals[0] * 8.192);
-            this.tip_vals[2] = Math.round(this.tip_vals[2] * 8.192);
+            this.tip_vals[0] = Math.round(this.tip_vals[0] * 819.2);
+            this.tip_vals[2] = Math.round(this.tip_vals[2] * 819.2);
             if (this.tip_vals[0] < 1000) {
-                this.text_items[2].text = Style.netunits_kbits();
-                this.menu_items[1].text = this.tip_unit_labels[0].text = _('kbit/s');
+                this.text_items[2].text = Style.netunits_bits();
+                this.menu_items[1].text = this.tip_unit_labels[0].text = _('bit/s');
             } else if (this.tip_vals[0] < 1000000) {
-                this.text_items[2].text = Style.netunits_mbits();
-                this.menu_items[1].text = this.tip_unit_labels[0].text = _('Mbit/s');
+                this.text_items[2].text = Style.netunits_kbits();
+                this.menu_items[1].text = this.tip_unit_labels[0].text = _('Kbit/s');
                 this.tip_vals[0] = (this.tip_vals[0] / 1000).toPrecision(3);
             } else {
-                this.text_items[2].text = Style.netunits_gbits();
-                this.menu_items[1].text = this.tip_unit_labels[0].text = _('Gbit/s');
+                this.text_items[2].text = Style.netunits_mbits();
+                this.menu_items[1].text = this.tip_unit_labels[0].text = _('Mbit/s');
                 this.tip_vals[0] = (this.tip_vals[0] / 1000000).toPrecision(3);
             }
             if (this.tip_vals[2] < 1000) {
-                this.text_items[5].text = Style.netunits_kbits();
-                this.menu_items[4].text = this.tip_unit_labels[2].text = _('kbit/s');
+                this.text_items[5].text = Style.netunits_bits();
+                this.menu_items[4].text = this.tip_unit_labels[2].text = _('bit/s');
             } else if (this.tip_vals[2] < 1000000) {
-                this.text_items[5].text = Style.netunits_mbits();
-                this.menu_items[4].text = this.tip_unit_labels[2].text = _('Mbit/s');
+                this.text_items[5].text = Style.netunits_kbits();
+                this.menu_items[4].text = this.tip_unit_labels[2].text = _('Kbit/s');
                 this.tip_vals[2] = (this.tip_vals[2] / 1000).toPrecision(3);
             } else {
-                this.text_items[5].text = Style.netunits_gbits();
-                this.menu_items[4].text = this.tip_unit_labels[2].text = _('Gbit/s');
+                this.text_items[5].text = Style.netunits_mbits();
+                this.menu_items[4].text = this.tip_unit_labels[2].text = _('Mbit/s');
                 this.tip_vals[2] = (this.tip_vals[2] / 1000000).toPrecision(3);
             }
         } else {
+            this.tip_vals[0]*=100;
+            this.tip_vals[2]*=100;
             if (this.tip_vals[0] < 1024) {
+                this.text_items[2].text = Style.netunits_bytes();
+                this.menu_items[1].text = this.tip_unit_labels[0].text = _('B/s');
+            } else if (this.tip_vals[0] < 1048576) {
                 this.text_items[2].text = Style.netunits_kbytes();
                 this.menu_items[1].text = this.tip_unit_labels[0].text = _('KiB/s');
-            } else if (this.tip_vals[0] < 1048576) {
-                this.text_items[2].text = Style.netunits_mbytes();
-                this.menu_items[1].text = this.tip_unit_labels[0].text = _('MiB/s');
                 this.tip_vals[0] = (this.tip_vals[0] / 1024).toPrecision(3);
             } else {
-                this.text_items[2].text = Style.netunits_gbytes();
-                this.menu_items[1].text = this.tip_unit_labels[0].text = _('GiB/s');
+                this.text_items[2].text = Style.netunits_mbytes();
+                this.menu_items[1].text = this.tip_unit_labels[0].text = _('MiB/s');
                 this.tip_vals[0] = (this.tip_vals[0] / 1048576).toPrecision(3);
             }
             if (this.tip_vals[2] < 1024) {
+                this.text_items[5].text = Style.netunits_bytes();
+                this.menu_items[4].text = this.tip_unit_labels[2].text = _('B/s');
+            } else if (this.tip_vals[2] < 1048576) {
                 this.text_items[5].text = Style.netunits_kbytes();
                 this.menu_items[4].text = this.tip_unit_labels[2].text = _('KiB/s');
-            } else if (this.tip_vals[2] < 1048576) {
-                this.text_items[5].text = Style.netunits_mbytes();
-                this.menu_items[4].text = this.tip_unit_labels[2].text = _('MiB/s');
                 this.tip_vals[2] = (this.tip_vals[2] / 1024).toPrecision(3);
             } else {
-                this.text_items[5].text = Style.netunits_gbytes();
-                this.menu_items[4].text = this.tip_unit_labels[2].text = _('GiB/s');
+                this.text_items[5].text = Style.netunits_mbytes();
+                this.menu_items[4].text = this.tip_unit_labels[2].text = _('MiB/s');
                 this.tip_vals[2] = (this.tip_vals[2] / 1048576).toPrecision(3);
             }
         }
@@ -1945,7 +1958,7 @@ const Net = class SystemMonitor_Net extends ElementBase {
                 style_class: Style.get('sm-net-value'),
                 y_align: Clutter.ActorAlign.CENTER}),
             new St.Label({
-                text: _('KiB/s'),
+                text: _('B/s'),
                 style_class: Style.get('sm-net-unit-label'),
                 y_align: Clutter.ActorAlign.CENTER}),
             new St.Icon({
@@ -1956,7 +1969,7 @@ const Net = class SystemMonitor_Net extends ElementBase {
                 style_class: Style.get('sm-net-value'),
                 y_align: Clutter.ActorAlign.CENTER}),
             new St.Label({
-                text: _('KiB/s'),
+                text: _('B/s'),
                 style_class: Style.get('sm-net-unit-label'),
                 y_align: Clutter.ActorAlign.CENTER})
         ];
@@ -1967,7 +1980,7 @@ const Net = class SystemMonitor_Net extends ElementBase {
                 text: '',
                 style_class: Style.get('sm-value')}),
             new St.Label({
-                text: _('KiB/s'),
+                text: _('B/s'),
                 style_class: Style.get('sm-label')}),
             new St.Label({
                 text: _(' ↓'),
@@ -1976,7 +1989,7 @@ const Net = class SystemMonitor_Net extends ElementBase {
                 text: '',
                 style_class: Style.get('sm-value')}),
             new St.Label({
-                text: _(' KiB/s'),
+                text: _(' B/s'),
                 style_class: Style.get('sm-label')}),
             new St.Label({
                 text: _(' ↑'),

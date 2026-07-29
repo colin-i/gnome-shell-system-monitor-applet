@@ -65,10 +65,13 @@ Before installing, ensure you have the necessary system packages (note that if y
   };
   environment.systemPackages = with pkgs; [
       libgtop
+      gtop
   ];
   ```
 
 For NVIDIA graphics card memory monitoring, install `nvidia-smi`.
+
+For reliable thermal and fan monitoring (especially with multiple sensors of the same type, e.g. dual NVMe drives), install `lm-sensors` (`lm_sensors` on some distros). Without it, the extension falls back to direct sysfs enumeration which may not distinguish identically-named sensors.
 
 ## Installation
 
@@ -99,13 +102,13 @@ After installation, the extension will be available for enabling in GNOME Extens
    ```
    git clone https://github.com/mgalgs/gnome-shell-system-monitor-next-applet.git
    ```
-2. Install and rebuild gschemas:
+2. Install:
    ```
    cd gnome-shell-system-monitor-next-applet
-   make install gschemas.install-and-compile
+   make install
    ```
 3. Reload GNOME Shell:
-   - X11: Press `Alt+F2`, type `r`, and press Enter
+   - X11: Press `Alt+F2`, type `r`, press Enter
    - Wayland: Log out and log back in
 4. Enable the extension:
    ```
@@ -115,13 +118,15 @@ After installation, the extension will be available for enabling in GNOME Extens
 Now you can hack away on the extension in your clone of the repo and test
 your changes by running:
 
-    make uninstall install gschemas.install-and-compile
+    make uninstall install
 
 and reloading GNOME Shell.
 
 ## Usage
 
 After installation, the system monitor will appear in your top panel. You can configure its appearance and behavior through the GNOME Extensions app or by clicking on the panel and selecting "Preferences".
+
+You can also graph your own custom metrics using the Prometheus monitor and a simple script — see [Custom Metrics](docs/widget-authoring.md#custom-metrics-no-code-changes) for details.
 
 ## Screenshots
 
@@ -172,6 +177,37 @@ To capture debug logs and set a custom screen size for the nested session:
 G_MESSAGES_DEBUG=all MUTTER_DEBUG_DUMMY_MODE_SPECS=1366x768 dbus-run-session -- gnome-shell --nested --wayland |& tee /tmp/logs.txt
 ```
 
+### VM-Based Functional Testing
+
+For automated testing across multiple GNOME Shell versions, the project includes a VM test harness that creates isolated Fedora/Ubuntu VMs from cloud images, deploys the extension, and captures screenshots and logs.
+
+**Prerequisites:** `libvirt`, `qemu`, `virt-install`, `passt`, `genisoimage`, `imagemagick`
+
+```bash
+# One-time setup (~10 min, cached after)
+make vm-create VM=gssmn-fedora42
+
+# Day-to-day workflow
+make vm-list                      # Show VMs and their status
+make vm-start VM=gssmn-fedora42   # Boot a VM
+make vm-test VM=gssmn-fedora42    # Deploy + smoke test
+make vm-viewer VM=gssmn-fedora42  # Open interactive graphical session
+make vm-ssh VM=gssmn-fedora42     # SSH into the VM
+make vm-stop VM=gssmn-fedora42    # Shut down when done
+
+# Push monitor configs for visual testing
+./testing/vm/vm-config.sh --vm gssmn-fedora42 --preset all-visible --screenshot
+./testing/vm/vm-config.sh --list-presets
+
+# Full matrix test with before/after comparison
+make vm-test-all LABEL=master-baseline
+make vm-test-all LABEL=my-feature BASELINE=master-baseline
+```
+
+VMs are created once and reused across sessions — just start/stop as needed.
+
+See [`testing/vm/README.md`](testing/vm/README.md) for detailed usage, architecture, and available options.
+
 ## Translation
 
 To contribute a translation:
@@ -185,7 +221,7 @@ To contribute a translation:
 To create a ZIP file for upload to GNOME Shell Extensions:
 
 ```
-make zip-file VERSION=<version>
+make zip-file
 ```
 
 This process used to be automated by [the uploader Github Action](actions/uploader)
@@ -199,6 +235,7 @@ good option for a CI-based solution (more research on this is required).
 ## Authors
 
 - [paradoxxxzero](https://github.com/paradoxxxzero)
+- [mgalgs](https://github.com/mgalgs)
 - [yuyichao](https://github.com/yuyichao)
 - [darkxst](https://github.com/darkxst)
 - [And many contributors](https://github.com/mgalgs/gnome-shell-system-monitor-next-applet/contributors)
